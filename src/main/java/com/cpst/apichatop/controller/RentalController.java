@@ -56,20 +56,29 @@ public class RentalController {
             @RequestParam("surface") String surface,
             @RequestParam("price") String price,
             @RequestParam("description") String description,
-            @RequestParam("picture") MultipartFile picture,
+            @RequestParam(name = "picture", required = false) MultipartFile picture,
             Principal user) throws Exception {
 
         Long ownerId = dbUserService.findByEmail(dbUserService.getEmailFromAuthentication(user)).get().getId();
 
-        String fileName = UUID.randomUUID().toString();
-        String originalFileName = picture.getOriginalFilename();
-        String fileExtension = originalFileName.substring(originalFileName.lastIndexOf(".") + 1);
-        Path path = Paths.get("./src/main/resources/static/rentalImages", fileName + "." + fileExtension);
+        String filePrefix = "/api/rentalImages/";
+        String fullPicturePath;
+        if (picture != null) {
 
-        Files.write(path, picture.getBytes());
+            String fileName = UUID.randomUUID().toString();
+            String originalFileName = picture.getOriginalFilename();
+            String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            Path path = Paths.get("./src/main/resources/static/rentalImages", fileName + fileExtension);
+
+            Files.write(path, picture.getBytes());
+
+            fullPicturePath = filePrefix + fileName + fileExtension;
+        } else {
+            fullPicturePath = filePrefix + "default.jpg";
+        }
 
         Rental newRental = new Rental(name, Float.valueOf(surface), Float.valueOf(price), description,
-                fileName + "." + fileExtension,
+                fullPicturePath,
                 ownerId);
 
         rentalService.createRental(newRental);
