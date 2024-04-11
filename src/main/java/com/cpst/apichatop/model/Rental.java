@@ -2,7 +2,6 @@ package com.cpst.apichatop.model;
 
 import java.time.LocalDate;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,9 +23,9 @@ public class Rental {
         this.setSurface(surface);
         this.setPrice(price);
         this.setDescription(description);
-        this.setCreatedAt(LocalDate.now());
-        this.setUpdatedAt(LocalDate.now());
-        this.setOwnerId(ownerId);
+        this.setCreated_at(LocalDate.now());
+        this.setUpdated_at(LocalDate.now());
+        this.setOwner_id(ownerId);
         this.setPicture(picture);
     }
 
@@ -44,12 +43,9 @@ public class Rental {
 
     private String description;
 
-    @Column(name = "owner_id")
-    private Long ownerId;
+    private Long owner_id;
 
-    @Column(name = "created_at")
-    private LocalDate createdAt;
+    private LocalDate created_at;
 
-    @Column(name = "updated_at")
-    private LocalDate updatedAt;
+    private LocalDate updated_at;
 }
