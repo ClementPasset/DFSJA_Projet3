@@ -2,7 +2,6 @@ package com.cpst.apichatop.model;
 
 import java.sql.Date;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,9 +21,7 @@ public class DBUserResponse {
 
     private String email;
 
-    @Column(name = "created_at")
-    private Date createdAt;
+    private Date created_at;
 
-    @Column(name = "updated_at")
-    private Date updatedAt;
+    private Date updated_at;
 }

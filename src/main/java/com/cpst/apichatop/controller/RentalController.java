@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.cpst.apichatop.model.Rental;
+import com.cpst.apichatop.model.RentalsResponse;
 import com.cpst.apichatop.service.DBUserService;
 import com.cpst.apichatop.service.RentalService;
 
@@ -34,8 +35,8 @@ public class RentalController {
     }
 
     @GetMapping("/rentals")
-    public ResponseEntity<Iterable<Rental>> getRentals() {
-        Iterable<Rental> rentals = rentalService.getRentals();
+    public ResponseEntity<RentalsResponse> getRentals() {
+        RentalsResponse rentals = new RentalsResponse(rentalService.getRentals());
         return ResponseEntity.ok(rentals);
     }
 
@@ -91,7 +92,7 @@ public class RentalController {
 
         if (optionalRentalToUpdate.isPresent()) {
             Rental rentalToUpdate = optionalRentalToUpdate.get();
-            if (userId == rentalToUpdate.getOwnerId()) {
+            if (userId == rentalToUpdate.getOwner_id()) {
                 rentalToUpdate.setName(name);
                 rentalToUpdate.setSurface(Float.valueOf(surface));
                 rentalToUpdate.setDescription(description);

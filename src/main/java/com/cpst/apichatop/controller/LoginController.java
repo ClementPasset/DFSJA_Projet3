@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,8 +14,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cpst.apichatop.model.AuthRequest;
 import com.cpst.apichatop.model.DBUser;
 import com.cpst.apichatop.model.DBUserResponse;
+import com.cpst.apichatop.model.TokenResponse;
 import com.cpst.apichatop.repository.DBUserResponseRepository;
 import com.cpst.apichatop.security.service.JWTService;
 import com.cpst.apichatop.service.DBUserService;
@@ -30,24 +33,31 @@ public class LoginController {
 
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    private AuthenticationManager authManager;
+
     public LoginController(JWTService jwtService,
             DBUserService dbUserService,
             DBUserResponseRepository dbUserResponseRepository,
-            BCryptPasswordEncoder bCryptPasswordEncoder) {
+            BCryptPasswordEncoder bCryptPasswordEncoder,
+            AuthenticationManager authManager) {
         this.jwtService = jwtService;
         this.dbUserService = dbUserService;
         this.dbUserResponseRepository = dbUserResponseRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.authManager = authManager;
     }
 
     @PostMapping("/auth/login")
-    public ResponseEntity<String> getLogin(Authentication auth) {
+    public ResponseEntity<TokenResponse> getLogin(@RequestBody AuthRequest authRequest) {
+        Authentication auth = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword()));
         String token = jwtService.generateToken(auth);
-        return ResponseEntity.ok().body(token);
+        TokenResponse tokenResponse = new TokenResponse(token);
+        return ResponseEntity.ok().body(tokenResponse);
     }
 
     @PostMapping("/auth/register")
-    public ResponseEntity<String> register(@RequestBody DBUser user) throws Exception {
+    public ResponseEntity<?> register(@RequestBody DBUser user) throws Exception {
         boolean userFound = dbUserService.findByEmail(user.getEmail()).isPresent();
         if (userFound) {
             return ResponseEntity.badRequest().body("User already exists.");
@@ -65,7 +75,9 @@ public class LoginController {
                     user.getEmail(),
                     password);
 
-            return ResponseEntity.ok().body(jwtService.generateToken(auth));
+            TokenResponse tokenResponse = new TokenResponse(jwtService.generateToken(auth));
+
+            return ResponseEntity.ok().body(tokenResponse);
         }
     }
 
