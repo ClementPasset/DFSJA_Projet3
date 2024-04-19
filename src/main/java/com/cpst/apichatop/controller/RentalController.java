@@ -50,7 +50,7 @@ public class RentalController {
         if (rental != null) {
             return ResponseEntity.ok(rental);
         } else {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.notFound().build();
         }
     }
 
@@ -119,7 +119,7 @@ public class RentalController {
                         .body("The current user is not the owner of this rental.");
             }
         } else {
-            return ResponseEntity.internalServerError().body("This rental doesn't exist.");
+            return ResponseEntity.notFound().build();
         }
 
     }

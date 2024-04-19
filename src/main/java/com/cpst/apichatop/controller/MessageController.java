@@ -47,7 +47,7 @@ public class MessageController {
             messageService.createMessage(newMessage);
             return ResponseEntity.ok(newMessage);
         } else {
-            return ResponseEntity.internalServerError().body("Incorrect input.");
+            return ResponseEntity.badRequest().body("Incorrect input.");
         }
     }
 }
