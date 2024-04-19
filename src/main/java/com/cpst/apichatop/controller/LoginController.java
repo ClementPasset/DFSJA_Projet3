@@ -3,7 +3,6 @@ package com.cpst.apichatop.controller;
 import java.security.Principal;
 import java.time.LocalDate;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -96,7 +95,7 @@ public class LoginController {
             DBUserResponse userResponse = dbUserResponseRepository.findByEmail(email).get();
             return ResponseEntity.ok(userResponse);
         } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.badRequest().body("Required parameters are missing.");
         }
     }
 }

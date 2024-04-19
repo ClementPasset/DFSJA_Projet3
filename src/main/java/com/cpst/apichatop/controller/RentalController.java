@@ -3,6 +3,7 @@ package com.cpst.apichatop.controller;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cpst.apichatop.model.MessageResponse;
 import com.cpst.apichatop.model.Rental;
 import com.cpst.apichatop.model.RentalsResponse;
 import com.cpst.apichatop.service.DBUserService;
@@ -50,13 +51,13 @@ public class RentalController {
         if (rental != null) {
             return ResponseEntity.ok(rental);
         } else {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.notFound().build();
         }
     }
 
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/rentals")
-    public ResponseEntity<String> createRental(
+    public ResponseEntity<?> createRental(
             @RequestParam("name") String name,
             @RequestParam("surface") String surface,
             @RequestParam("price") String price,
@@ -88,7 +89,7 @@ public class RentalController {
 
         rentalService.createRental(newRental);
 
-        return ResponseEntity.ok("Rental has been created.");
+        return ResponseEntity.ok(new MessageResponse("Rental has been created."));
     }
 
     @SecurityRequirement(name = "Bearer Authentication")
@@ -113,13 +114,13 @@ public class RentalController {
                 rentalToUpdate.setDescription(description);
                 rentalToUpdate.setPrice(Float.valueOf(price));
                 rentalService.updateRental(rentalToUpdate);
-                return ResponseEntity.ok("The rental has been updated");
+                return ResponseEntity.ok(new MessageResponse("The rental has been updated"));
             } else {
                 return ResponseEntity.internalServerError()
                         .body("The current user is not the owner of this rental.");
             }
         } else {
-            return ResponseEntity.internalServerError().body("This rental doesn't exist.");
+            return ResponseEntity.notFound().build();
         }
 
     }
