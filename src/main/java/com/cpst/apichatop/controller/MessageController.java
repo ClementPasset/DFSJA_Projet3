@@ -15,6 +15,8 @@ import com.cpst.apichatop.service.DBUserService;
 import com.cpst.apichatop.service.MessageService;
 import com.cpst.apichatop.service.RentalService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 public class MessageController {
 
@@ -31,6 +33,7 @@ public class MessageController {
         this.rentalService = rentalService;
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/messages")
     public ResponseEntity<?> createMessage(
             @RequestBody MessageRequest messageRequest,

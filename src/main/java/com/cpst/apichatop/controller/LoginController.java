@@ -22,6 +22,8 @@ import com.cpst.apichatop.repository.DBUserResponseRepository;
 import com.cpst.apichatop.security.service.JWTService;
 import com.cpst.apichatop.service.DBUserService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 public class LoginController {
 
@@ -47,6 +49,7 @@ public class LoginController {
         this.authManager = authManager;
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/auth/login")
     public ResponseEntity<TokenResponse> getLogin(@RequestBody AuthRequest authRequest) {
         Authentication auth = authManager.authenticate(
@@ -56,6 +59,7 @@ public class LoginController {
         return ResponseEntity.ok().body(tokenResponse);
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/auth/register")
     public ResponseEntity<?> register(@RequestBody DBUser user) throws Exception {
         boolean userFound = dbUserService.findByEmail(user.getEmail()).isPresent();
@@ -81,6 +85,7 @@ public class LoginController {
         }
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @GetMapping("/auth/me")
     public ResponseEntity<?> getMe(Principal user) {
         String email = null;
