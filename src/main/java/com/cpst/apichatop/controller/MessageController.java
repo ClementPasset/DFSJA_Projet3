@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.cpst.apichatop.model.Message;
 import com.cpst.apichatop.model.MessageRequest;
+import com.cpst.apichatop.model.MessageResponse;
 import com.cpst.apichatop.model.Rental;
 import com.cpst.apichatop.service.DBUserService;
 import com.cpst.apichatop.service.MessageService;
@@ -45,7 +46,7 @@ public class MessageController {
             Message newMessage = new Message(messageRequest.getMessage(), messageRequest.getRental_id(),
                     messageRequest.getUser_id());
             messageService.createMessage(newMessage);
-            return ResponseEntity.ok(newMessage);
+            return ResponseEntity.ok(new MessageResponse("Message has been send."));
         } else {
             return ResponseEntity.badRequest().body("Incorrect input.");
         }
