@@ -7,6 +7,8 @@ import com.cpst.apichatop.model.Rental;
 import com.cpst.apichatop.service.DBUserService;
 import com.cpst.apichatop.service.RentalService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,12 +35,14 @@ public class RentalController {
         this.dbUserService = dbUserService;
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @GetMapping("/rentals")
     public ResponseEntity<Iterable<Rental>> getRentals() {
         Iterable<Rental> rentals = rentalService.getRentals();
         return ResponseEntity.ok(rentals);
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @GetMapping("/rentals/{id}")
     public ResponseEntity<Rental> getRental(@PathVariable("id") Long id) {
         Rental rental = rentalService.getRentalById(id).get();
@@ -49,6 +53,7 @@ public class RentalController {
         }
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/rentals")
     public ResponseEntity<String> createRental(
             @RequestParam("name") String name,
@@ -76,6 +81,7 @@ public class RentalController {
         return ResponseEntity.ok("Rental has been created.");
     }
 
+    @SecurityRequirement(name = "Bearer Authentication")
     @PutMapping("/rentals/{id}")
     public ResponseEntity<?> updateRental(
             @PathVariable("id") Long id,
