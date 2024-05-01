@@ -1,22 +1,22 @@
 package com.cpst.apichatop.controller;
 
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.cpst.apichatop.model.MessageResponse;
+import com.cpst.apichatop.model.DBUser;
 import com.cpst.apichatop.model.Rental;
-import com.cpst.apichatop.model.RentalsResponse;
+import com.cpst.apichatop.DTO.RentalDTO;
+import com.cpst.apichatop.DTO.Requests.CreateRentalRequest;
+import com.cpst.apichatop.DTO.Responses.MessageResponse;
+import com.cpst.apichatop.DTO.Responses.RentalsResponse;
+import com.cpst.apichatop.mapper.RentalDTOMapper;
 import com.cpst.apichatop.service.DBUserService;
 import com.cpst.apichatop.service.RentalService;
 
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.AllArgsConstructor;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.Principal;
-import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -27,29 +27,26 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
+@AllArgsConstructor
 public class RentalController {
 
-    RentalService rentalService;
-    DBUserService dbUserService;
-
-    public RentalController(RentalService rentalService, DBUserService dbUserService) {
-        this.rentalService = rentalService;
-        this.dbUserService = dbUserService;
-    }
+    private RentalService rentalService;
+    private DBUserService dbUserService;
+    private RentalDTOMapper rentalDTOMapper;
 
     @SecurityRequirement(name = "Bearer Authentication")
     @GetMapping("/rentals")
     public ResponseEntity<RentalsResponse> getRentals() {
-        RentalsResponse rentals = new RentalsResponse(rentalService.getRentals());
+        RentalsResponse rentals = new RentalsResponse(rentalDTOMapper.toDto(rentalService.getRentals()));
         return ResponseEntity.ok(rentals);
     }
 
     @SecurityRequirement(name = "Bearer Authentication")
     @GetMapping("/rentals/{id}")
-    public ResponseEntity<Rental> getRental(@PathVariable("id") Long id) {
-        Rental rental = rentalService.getRentalById(id).get();
-        if (rental != null) {
-            return ResponseEntity.ok(rental);
+    public ResponseEntity<RentalDTO> getRental(@PathVariable("id") Long id) {
+        RentalDTO rentalDto = rentalDTOMapper.toDto(rentalService.getRentalById(id));
+        if (rentalDto != null) {
+            return ResponseEntity.ok(rentalDto);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -58,38 +55,23 @@ public class RentalController {
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/rentals")
     public ResponseEntity<?> createRental(
-            @RequestParam("name") String name,
-            @RequestParam("surface") String surface,
-            @RequestParam("price") String price,
-            @RequestParam("description") String description,
-            @RequestParam(name = "picture", required = false) MultipartFile picture,
+            @RequestBody CreateRentalRequest request,
             Principal user) throws Exception {
 
-        Long ownerId = dbUserService.findByEmail(dbUserService.getEmailFromAuthentication(user)).get().getId();
+        DBUser owner = dbUserService.findByEmail(dbUserService.getEmailFromAuthentication(user)).get();
 
-        String filePrefix = "/api/rentalImages/";
-        String fullPicturePath;
-        if (picture != null) {
+        Rental newRental = rentalDTOMapper.toEntity(request, owner);
 
-            String fileName = UUID.randomUUID().toString();
-            String originalFileName = picture.getOriginalFilename();
-            String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
-            Path path = Paths.get("./src/main/resources/static/rentalImages", fileName + fileExtension);
+        try {
+            rentalService.createRental(newRental);
 
-            Files.write(path, picture.getBytes());
+            rentalService.saveRentalImage(newRental, request.getPicture());
 
-            fullPicturePath = filePrefix + fileName + fileExtension;
-        } else {
-            fullPicturePath = filePrefix + "default.jpg";
+            return ResponseEntity.ok(new MessageResponse("Rental has been created."));
+        } catch (Exception exception) {
+            return ResponseEntity.internalServerError().body(exception);
         }
 
-        Rental newRental = new Rental(name, Float.valueOf(surface), Float.valueOf(price), description,
-                fullPicturePath,
-                ownerId);
-
-        rentalService.createRental(newRental);
-
-        return ResponseEntity.ok(new MessageResponse("Rental has been created."));
     }
 
     @SecurityRequirement(name = "Bearer Authentication")
@@ -103,17 +85,13 @@ public class RentalController {
             Principal user,
             Authentication auth) {
 
-        Long userId = dbUserService.findByEmail(dbUserService.getEmailFromAuthentication(user)).get().getId();
-        Optional<Rental> optionalRentalToUpdate = rentalService.getRentalById(id);
+        DBUser dbUser = dbUserService.findByEmail(dbUserService.getEmailFromAuthentication(user)).get();
+        Rental rentalToUpdate = rentalService.getRentalById(id);
 
-        if (optionalRentalToUpdate.isPresent()) {
-            Rental rentalToUpdate = optionalRentalToUpdate.get();
-            if (userId == rentalToUpdate.getOwner_id()) {
-                rentalToUpdate.setName(name);
-                rentalToUpdate.setSurface(Float.valueOf(surface));
-                rentalToUpdate.setDescription(description);
-                rentalToUpdate.setPrice(Float.valueOf(price));
-                rentalService.updateRental(rentalToUpdate);
+        if (rentalToUpdate != null) {
+            if (dbUser.getId() == rentalToUpdate.getUser().getId()) {
+                rentalService.updateRental(rentalToUpdate, name, description, Float.valueOf(surface),
+                        Float.valueOf(price));
                 return ResponseEntity.ok(new MessageResponse("The rental has been updated"));
             } else {
                 return ResponseEntity.internalServerError()

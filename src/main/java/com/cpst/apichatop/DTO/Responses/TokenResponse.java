@@ -1,4 +1,4 @@
-package com.cpst.apichatop.model;
+package com.cpst.apichatop.DTO.Responses;
 
 import lombok.Data;
 

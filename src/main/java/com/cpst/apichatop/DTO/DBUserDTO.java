@@ -1,18 +1,14 @@
-package com.cpst.apichatop.model;
+package com.cpst.apichatop.DTO;
 
-import java.sql.Date;
+import java.time.LocalDate;
 
-import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.Data;
 
 @Data
-@Entity
-@Table(name = "users")
-public class DBUserResponse {
+public class DBUserDTO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,7 +17,7 @@ public class DBUserResponse {
 
     private String email;
 
-    private Date created_at;
+    private LocalDate created_at;
 
-    private Date updated_at;
+    private LocalDate updated_at;
 }

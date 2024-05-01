@@ -11,13 +11,14 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
+import com.cpst.apichatop.DTO.Responses.TokenResponse;
+
+import lombok.AllArgsConstructor;
+
 @Service
+@AllArgsConstructor
 public class JWTService {
     private JwtEncoder jwtEncoder;
-
-    public JWTService(JwtEncoder jwtEncoder) {
-        this.jwtEncoder = jwtEncoder;
-    }
 
     public String generateToken(Authentication auth) {
         Instant now = Instant.now();
@@ -29,5 +30,10 @@ public class JWTService {
         JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters
                 .from(JwsHeader.with(MacAlgorithm.HS256).build(), claims);
         return this.jwtEncoder.encode(jwtEncoderParameters).getTokenValue();
+    }
+
+    public TokenResponse getTokenResponse(Authentication auth) {
+        String token = this.generateToken(auth);
+        return new TokenResponse(token);
     }
 }
