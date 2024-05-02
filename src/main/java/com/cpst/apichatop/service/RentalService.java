@@ -4,12 +4,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cpst.apichatop.DTO.RentalDTO;
+import com.cpst.apichatop.DTO.Requests.CreateRentalRequest;
+import com.cpst.apichatop.DTO.Requests.UpdateRentalRequest;
+import com.cpst.apichatop.DTO.Responses.MessageResponse;
+import com.cpst.apichatop.DTO.Responses.RentalsResponse;
 import com.cpst.apichatop.Exceptions.NotFoundException;
 import com.cpst.apichatop.Exceptions.UnauthorizedException;
+import com.cpst.apichatop.mapper.RentalDTOMapper;
 import com.cpst.apichatop.model.DBUser;
 import com.cpst.apichatop.model.Rental;
 import com.cpst.apichatop.repository.RentalRepository;
@@ -21,14 +28,16 @@ import lombok.AllArgsConstructor;
 public class RentalService {
 
     private RentalRepository rentalRepository;
+    private RentalDTOMapper rentalDTOMapper;
+    private DBUserService dbUserService;
 
     /**
      * retrieves all rentals
      * 
      * @return rentals list
      */
-    public Iterable<Rental> getRentals() {
-        return this.rentalRepository.findAll();
+    public RentalsResponse getRentals() {
+        return rentalDTOMapper.toDto(this.rentalRepository.findAll());
     }
 
     /**
@@ -38,40 +47,44 @@ public class RentalService {
      * @return The Rental corresponding to the id param
      */
     public Rental getRentalById(Long id) {
-        return this.rentalRepository.findById(id).get();
+
+        Rental rental = rentalRepository.findById(id).get();
+        if (rental != null) {
+            return rental;
+        } else {
+            throw new NotFoundException("Rental not found.");
+        }
     }
 
-    /**
-     * Create a new rental in database
-     * 
-     * @param rental The rental to create
-     * @return The successfuly cerated Rental
-     */
-    public Rental createRental(Rental rental) {
-        return rentalRepository.save(rental);
+    public RentalDTO getRentalDTOById(Long id) {
+        return rentalDTOMapper.toDto(this.getRentalById(id));
     }
 
-    /**
-     * Method to updated an existing rental in database
-     * 
-     * @param rental
-     * @param name
-     * @param description
-     * @param surface
-     * @param price
-     * @return The updated Rental
-     */
-    public Rental updateRental(Rental rental, String name, String description, Float surface, Float price,
-            DBUser currentUser) throws Exception {
-        if (rental == null) {
-            throw new NotFoundException(description);
-        } else if (rental.getUser().getId() == currentUser.getId()) {
-            rental.setName(name);
-            rental.setSurface(Float.valueOf(surface));
-            rental.setDescription(description);
-            rental.setPrice(Float.valueOf(price));
+    public MessageResponse createRental(CreateRentalRequest request, Principal principal) throws IOException {
+        DBUser user = dbUserService.findByEmail(dbUserService.getEmailFromAuthentication(principal))
+                .get();
+        Rental rental = rentalDTOMapper.toEntity(request, user);
 
-            return rentalRepository.save(rental);
+        rentalRepository.save(rental);
+        this.saveRentalImage(rental, request.getPicture());
+
+        return new MessageResponse("Rental has been created");
+    }
+
+    public MessageResponse updateRental(Long id, UpdateRentalRequest request, Principal principal) {
+        DBUser user = dbUserService.findByEmail(dbUserService.getEmailFromAuthentication(principal))
+                .get();
+        Rental rentalToUpdate = this.getRentalById(id);
+        if (rentalToUpdate == null) {
+            throw new NotFoundException("Rental not found.");
+        } else if (rentalToUpdate.getUser().getId() == user.getId()) {
+            rentalToUpdate.setName(request.getName());
+            rentalToUpdate.setDescription(request.getDescription());
+            rentalToUpdate.setSurface(Float.valueOf(request.getSurface()));
+            rentalToUpdate.setPrice(Float.valueOf(request.getPrice()));
+
+            return new MessageResponse("Rental has been updated.");
+
         } else {
             throw new UnauthorizedException("The user is not the owner of the rental");
         }

@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.cpst.apichatop.DTO.RentalDTO;
 import com.cpst.apichatop.DTO.Requests.CreateRentalRequest;
+import com.cpst.apichatop.DTO.Responses.RentalsResponse;
 import com.cpst.apichatop.model.DBUser;
 import com.cpst.apichatop.model.Rental;
 
@@ -47,8 +48,8 @@ public class RentalDTOMapper {
         return rentalDTO;
     }
 
-    public Iterable<RentalDTO> toDto(Iterable<Rental> rentals) {
-        return StreamSupport.stream(rentals.spliterator(), false).map(rental -> this.toDto(rental))
-                .collect(Collectors.toList());
+    public RentalsResponse toDto(Iterable<Rental> rentals) {
+        return new RentalsResponse(StreamSupport.stream(rentals.spliterator(), false).map(rental -> this.toDto(rental))
+                .collect(Collectors.toList()));
     }
 }

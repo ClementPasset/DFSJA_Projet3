@@ -1,8 +1,14 @@
 package com.cpst.apichatop.service;
 
+import java.security.Principal;
+
 import org.springframework.stereotype.Service;
 
+import com.cpst.apichatop.DTO.Requests.MessageRequest;
+import com.cpst.apichatop.DTO.Responses.MessageResponse;
+import com.cpst.apichatop.model.DBUser;
 import com.cpst.apichatop.model.Message;
+import com.cpst.apichatop.model.Rental;
 import com.cpst.apichatop.repository.MessageRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -16,19 +22,24 @@ public class MessageService {
     RentalService rentalService;
 
     /**
-     * Method to create a new message in database
+     * Create a message in database if user and rental exist
      * 
-     * @param message The message that should be saved in database
-     * @return The message that has been created
+     * @param request MessageRequest
+     * @return MessageResponse
      */
-    public Message createMessage(Message message) {
-        boolean userExists = dbUserService.userExists(message.getUser());
-        boolean rentalExists = rentalService.rentalExists(message.getRental());
+    public MessageResponse createMessage(MessageRequest request, Principal principal) {
 
-        if (userExists && rentalExists) {
-            return messageRepository.save(message);
+        DBUser user = dbUserService.getUserInfo(principal);
+        Rental rental = rentalService.getRentalById(request.getRental_id());
+
+        if (user != null && rental != null) {
+            Message newMessage = new Message(request.message, rental, user);
+            messageRepository.save(newMessage);
+
+            return new MessageResponse("Message has been created.");
         } else {
             throw new EntityNotFoundException();
         }
+
     }
 }

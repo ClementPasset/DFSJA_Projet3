@@ -3,13 +3,22 @@ package com.cpst.apichatop.service;
 import java.security.Principal;
 import java.util.Optional;
 
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 
+import com.cpst.apichatop.DTO.DBUserDTO;
+import com.cpst.apichatop.DTO.Requests.AuthRequest;
+import com.cpst.apichatop.DTO.Requests.RegisterRequest;
+import com.cpst.apichatop.DTO.Responses.TokenResponse;
+import com.cpst.apichatop.Exceptions.AlreadyExistsException;
+import com.cpst.apichatop.mapper.DBUserDTOMapper;
 import com.cpst.apichatop.model.DBUser;
 import com.cpst.apichatop.repository.DBUserRepository;
+import com.cpst.apichatop.security.service.JWTService;
 
 import lombok.AllArgsConstructor;
 
@@ -18,6 +27,9 @@ import lombok.AllArgsConstructor;
 public class DBUserService {
 
     private DBUserRepository dbUserRepository;
+    private DBUserDTOMapper dbUserDTOMapper;
+    private JWTService jwtService;
+    private AuthenticationManager authManager;
 
     /**
      * Retrieves a user by his email
@@ -38,6 +50,16 @@ public class DBUserService {
     public DBUser saveDBUser(DBUser user) {
         DBUser newUser = dbUserRepository.save(user);
         return newUser;
+    }
+
+    /**
+     * Retrieves the information of a user as a DBUser object
+     * 
+     * @param auth authenticated user
+     * @return DBUser object with information of the authenticated user
+     */
+    public DBUserDTO getUserDtoInfo(Principal auth) {
+        return dbUserDTOMapper.toDto(this.getUserInfo(auth));
     }
 
     /**
@@ -110,5 +132,32 @@ public class DBUserService {
      */
     public boolean userExists(DBUser user) {
         return dbUserRepository.findById(user.getId()) != null;
+    }
+
+    public TokenResponse registerUser(RegisterRequest request) {
+        boolean userFound = this.findByEmail(request.getEmail()).isPresent();
+        if (userFound) {
+            throw new AlreadyExistsException("This user already exists");
+        } else {
+            String password = request.getPassword();
+
+            DBUser user = dbUserDTOMapper.toEntity(request);
+
+            DBUser savedUser = this.saveDBUser(user);
+
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                    savedUser.getEmail(),
+                    password);
+
+            TokenResponse tokenResponse = new TokenResponse(jwtService.generateToken(auth));
+
+            return tokenResponse;
+        }
+    }
+
+    public TokenResponse login(AuthRequest request) {
+        Authentication auth = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+        return jwtService.getTokenResponse(auth);
     }
 }
