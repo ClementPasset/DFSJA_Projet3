@@ -8,6 +8,8 @@ import com.cpst.apichatop.DTO.RentalDTO;
 import com.cpst.apichatop.DTO.Requests.CreateRentalRequest;
 import com.cpst.apichatop.DTO.Responses.MessageResponse;
 import com.cpst.apichatop.DTO.Responses.RentalsResponse;
+import com.cpst.apichatop.Exceptions.NotFoundException;
+import com.cpst.apichatop.Exceptions.UnauthorizedException;
 import com.cpst.apichatop.mapper.RentalDTOMapper;
 import com.cpst.apichatop.service.DBUserService;
 import com.cpst.apichatop.service.RentalService;
@@ -88,17 +90,16 @@ public class RentalController {
         DBUser dbUser = dbUserService.findByEmail(dbUserService.getEmailFromAuthentication(user)).get();
         Rental rentalToUpdate = rentalService.getRentalById(id);
 
-        if (rentalToUpdate != null) {
-            if (dbUser.getId() == rentalToUpdate.getUser().getId()) {
-                rentalService.updateRental(rentalToUpdate, name, description, Float.valueOf(surface),
-                        Float.valueOf(price));
-                return ResponseEntity.ok(new MessageResponse("The rental has been updated"));
-            } else {
-                return ResponseEntity.internalServerError()
-                        .body("The current user is not the owner of this rental.");
-            }
-        } else {
+        try {
+            rentalService.updateRental(rentalToUpdate, name, description, Float.valueOf(surface),
+                    Float.valueOf(price), dbUser);
+            return ResponseEntity.ok(new MessageResponse("The rental has been updated"));
+        } catch (UnauthorizedException exception) {
+            return ResponseEntity.status(401).body(exception);
+        } catch (NotFoundException exception) {
             return ResponseEntity.notFound().build();
+        } catch (Exception exception) {
+            return ResponseEntity.internalServerError().body(exception);
         }
 
     }

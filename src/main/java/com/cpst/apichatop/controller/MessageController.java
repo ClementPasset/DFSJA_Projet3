@@ -17,6 +17,7 @@ import com.cpst.apichatop.service.MessageService;
 import com.cpst.apichatop.service.RentalService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 
 @RestController
@@ -35,13 +36,12 @@ public class MessageController {
 
         DBUser user = dbUserService.getUserInfo(auth);
         Rental rental = rentalService.getRentalById(messageRequest.getRental_id());
-
-        if (user.getId() == messageRequest.getUser_id() && rental != null) {
+        try {
             Message newMessage = new Message(messageRequest.getMessage(), rental, user);
             messageService.createMessage(newMessage);
             return ResponseEntity.ok(new MessageResponse("Message has been send."));
-        } else {
-            return ResponseEntity.badRequest().body("Incorrect input.");
+        } catch (EntityNotFoundException exception) {
+            return ResponseEntity.badRequest().body(exception);
         }
     }
 }

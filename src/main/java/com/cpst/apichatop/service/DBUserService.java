@@ -101,4 +101,14 @@ public class DBUserService {
             return null;
         }
     }
+
+    /**
+     * Checks if the user exists in database
+     * 
+     * @param user DBUser to check
+     * @return true if the user exists, false otherwise
+     */
+    public boolean userExists(DBUser user) {
+        return dbUserRepository.findById(user.getId()) != null;
+    }
 }

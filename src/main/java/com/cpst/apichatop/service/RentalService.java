@@ -8,6 +8,9 @@ import java.nio.file.Paths;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cpst.apichatop.Exceptions.NotFoundException;
+import com.cpst.apichatop.Exceptions.UnauthorizedException;
+import com.cpst.apichatop.model.DBUser;
 import com.cpst.apichatop.model.Rental;
 import com.cpst.apichatop.repository.RentalRepository;
 
@@ -58,13 +61,20 @@ public class RentalService {
      * @param price
      * @return The updated Rental
      */
-    public Rental updateRental(Rental rental, String name, String description, Float surface, Float price) {
-        rental.setName(name);
-        rental.setSurface(Float.valueOf(surface));
-        rental.setDescription(description);
-        rental.setPrice(Float.valueOf(price));
+    public Rental updateRental(Rental rental, String name, String description, Float surface, Float price,
+            DBUser currentUser) throws Exception {
+        if (rental == null) {
+            throw new NotFoundException(description);
+        } else if (rental.getUser().getId() == currentUser.getId()) {
+            rental.setName(name);
+            rental.setSurface(Float.valueOf(surface));
+            rental.setDescription(description);
+            rental.setPrice(Float.valueOf(price));
 
-        return rentalRepository.save(rental);
+            return rentalRepository.save(rental);
+        } else {
+            throw new UnauthorizedException("The user is not the owner of the rental");
+        }
     }
 
     /**
@@ -80,5 +90,15 @@ public class RentalService {
         Path path = Paths.get("./src/main/resources/static/rentalImages", fileName);
 
         Files.write(path, file.getBytes());
+    }
+
+    /**
+     * Checks if the Rental exists
+     * 
+     * @param rental
+     * @return true if the rental exists, false otherwise
+     */
+    public boolean rentalExists(Rental rental) {
+        return rentalRepository.findById(rental.getId()) != null;
     }
 }
